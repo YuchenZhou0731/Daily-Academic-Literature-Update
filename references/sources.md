@@ -14,8 +14,7 @@ These capabilities are implemented directly. No separate paper-search MCP server
 The user runs this themselves in an interactive local terminal after initializing a workspace:
 
 ```text
-python -I -B scripts/workspace.py --workspace <workspace> credential openalex
-python -I -B scripts/workspace.py --workspace <workspace> credential scopus
+python -I -B scripts/workspace.py --workspace "xxx" credential xxx
 ```
 
 The input is hidden. Never ask for a key in chat, a command argument, a screenshot or a committed profile. The import verifies storage, not API authentication. Run `doctor --credentials`, followed by a bounded collection, to test actual access.
@@ -26,7 +25,7 @@ The input is hidden. Never ask for a key in chat, a command argument, a screensh
 
 There is no plaintext, environment-variable or silent anonymous fallback. Moving a workspace may require reimporting keys: system-keyring entries are scoped to its resolved path, and DPAPI is bound to the Windows user. Crossref/arXiv can still run without optional keys.
 
-Credentials are attached only to the exact official HTTPS API host. Authenticated redirects are blocked; cached success/error responses are redacted. OpenAlex uses the reported daily allowance and a configurable per-run cap, ignoring prepaid balance; the script never purchases credits. Scopus's page limit depends on the user's access tier. Start at 10; test a larger value before using it unattended.
+Credentials are attached only to the exact official HTTPS API host. Authenticated redirects are blocked; cached success/error responses are redacted. OpenAlex uses the reported daily allowance and a configurable per-run cap, ignoring prepaid balance; the script never purchases credits. Fill the request budgets and page sizes in place of `xxx` after checking the account's access tier. Test the chosen settings before using them unattended.
 
 Crossref cursors and Scopus offsets resume frozen windows. Changing query wording or effective page size changes checkpoint identity; old records remain stored. Scopus offset retrieval stops at 5,000 and reports incomplete coverage. A cap, API error or source cooldown is not a confirmed zero-result search.
 

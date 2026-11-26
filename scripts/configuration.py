@@ -10,6 +10,16 @@ SOURCES = {"crossref", "arxiv", "openalex", "scopus"}
 WEEKDAYS = ("MO", "TU", "WE", "TH", "FR", "SA", "SU")
 
 
+def placeholder_fields(value, path=""):
+    if isinstance(value, str):
+        return [path] if value.strip().casefold() == "xxx" else []
+    if isinstance(value, dict):
+        return [field for key, item in value.items() for field in placeholder_fields(item, f"{path}.{key}" if path else key)]
+    if isinstance(value, list):
+        return [field for index, item in enumerate(value) for field in placeholder_fields(item, f"{path}[{index}]")]
+    return []
+
+
 def timezone_for(profile):
     name = profile.get("timezone", "UTC")
     try:
@@ -52,6 +62,11 @@ def validate_profile(profile, allow_draft=False):
         raise ValueError("journal_watch must be a list")
     if profile.get("schema_version") != 1:
         raise ValueError("Unsupported profile schema")
+    pending = placeholder_fields(profile)
+    if pending:
+        if allow_draft and profile.get("preferences_confirmed") is False:
+            return profile
+        raise ValueError("Replace xxx placeholders before confirming or running: " + ", ".join(pending[:8]))
     if profile.get("language", "zh-CN") not in {"zh-CN", "en"}:
         raise ValueError("language must be zh-CN or en")
     timezone_for(profile)
@@ -118,7 +133,7 @@ def validate_profile(profile, allow_draft=False):
         raise ValueError("Frequency must be manual, daily or weekly")
     if schedule.get("frequency") != "manual":
         if not re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d", schedule.get("time", "")):
-            raise ValueError("Use a 24-hour schedule time such as 08:00")
+            raise ValueError("Use a valid 24-hour schedule time in HH:MM format")
         if schedule["frequency"] == "weekly":
             days = schedule.get("weekdays", [])
             strings(days, "Scheduled weekdays", False)

@@ -12,7 +12,7 @@ import sys
 import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from configuration import validate_profile
+from configuration import placeholder_fields, validate_profile
 from digest import WorkspaceLock, load_json, write_json
 
 
@@ -28,13 +28,11 @@ def merge(existing, update):
     return result
 
 
-def initialize(workspace, preset="custom"):
+def initialize(workspace):
     root = Path(workspace).resolve()
     if root == SKILL or (root / "profile.json").exists():
         raise ValueError("Choose a separate workspace without an existing profile; initialization never overwrites")
     profile = load_json(SKILL / "assets/profile.default.json")
-    if preset != "custom":
-        profile = merge(profile, load_json(SKILL / "assets/presets" / (preset + ".json")))
     profile["preferences_confirmed"] = False
     validate_profile(profile, allow_draft=True)
     root.mkdir(parents=True, exist_ok=True)
@@ -101,6 +99,7 @@ def doctor(workspace, check_credentials=False):
     root = Path(workspace).resolve()
     profile = load_json(root / "profile.json")
     validate_profile(profile, allow_draft=True)
+    pending = placeholder_fields(profile)
     sources = []
     access = Credentials(root, profile.get("credentials"))
     for source in profile["sources"]:
@@ -112,9 +111,9 @@ def doctor(workspace, check_credentials=False):
             except (RuntimeError, ValueError):
                 item["key_readable"] = False
         sources.append(item)
-    configured = bool(profile.get("topics")) and profile.get("preferences_confirmed", False)
+    configured = not pending and bool(profile.get("topics")) and profile.get("preferences_confirmed", False)
     configured = configured and all(not item["key_required"] or item["key_configured"] for item in sources)
-    return {"configuration_ready": configured, "workspace": str(root), "sources": sources,
+    return {"configuration_ready": configured, "unresolved_fields": pending, "workspace": str(root), "sources": sources,
             "schedule_intent": profile["schedule"], "timezone": profile["timezone"],
             "scheduler_registration": "not checked; profile settings do not register a task",
             "network_and_delivery": "not tested",
@@ -142,8 +141,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--workspace", required=True)
     commands = parser.add_subparsers(dest="command", required=True)
-    initial = commands.add_parser("init")
-    initial.add_argument("--preset", choices=["custom", "remote-sensing", "machine-learning"], default="custom")
+    commands.add_parser("init")
     update = commands.add_parser("configure")
     update.add_argument("--patch", required=True)
     update.add_argument("--confirm", action="store_true")
@@ -161,7 +159,7 @@ def main():
     credential.add_argument("provider", choices=["openalex", "scopus"])
     args = parser.parse_args()
     if args.command == "init":
-        result = str(initialize(args.workspace, args.preset))
+        result = str(initialize(args.workspace))
     elif args.command == "configure":
         result = str(configure(args.workspace, load_json(args.patch), args.confirm))
     elif args.command == "topic":

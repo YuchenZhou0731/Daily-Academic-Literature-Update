@@ -1,4 +1,4 @@
 interface:
   display_name: "自定义学术文献推送"
   short_description: "按主题、篇数、期刊与时间配置文献推送，并维护本地文献库和精读队列"
-  default_prompt: "Use $literature-digest-skill to configure my research interests, journal preferences, paper limit, and delivery schedule."
+  default_prompt: "Use $literature-digest-skill. Topics: xxx; journal policy: xxx; paper limit: xxx; schedule: xxx; timezone: xxx; delivery: xxx."

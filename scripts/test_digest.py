@@ -18,26 +18,26 @@ import reading
 
 TODAY = dt.datetime.now(digest.UTC).date()
 PROFILE = {
-    "schema_version": 1, "language": "zh-CN", "timezone": "Asia/Shanghai", "utc_offset_hours": 8,
+    "schema_version": 1, "language": "zh-CN", "timezone": "UTC",
     "delivery": {"channel": "codex", "notify_empty": False},
     "collection": {"initial_days": 14, "overlap_days": 14, "publication_age_days": 180, "page_size": 2, "max_pages": 3, "timeout_seconds": 5},
     "digest": {"max_papers": 3, "include_preprints": True, "include_title_only": True},
     "sources": ["crossref"], "preferred_journals": [], "excluded_terms": [],
-    "topics": [{"id": "soil", "label": "裸土辐射传输", "queries": ["soil microwave"],
-                "require_all": [["remote sensing", "radiative transfer", "microwave"], ["soil", "canopy"]], "boost_terms": []}]
+    "topics": [{"id": "delta", "label": "测试主题甲", "queries": ["delta zeta"],
+                "require_all": [["gamma", "alpha beta", "zeta"], ["delta", "epsilon"]], "boost_terms": []}]
 }
 
 
-def paper(number=1, abstract="A radiative transfer model estimates soil emission.", title=None, **changes):
-    return {"title": title or f"Soil microwave remote sensing study {number}", "doi": f"10.1234/paper.{number}",
+def paper(number=1, abstract="A alpha beta model estimates delta output.", title=None, **changes):
+    return {"title": title or f"Delta zeta gamma study {number}", "doi": f"10.1234/paper.{number}",
             "published": TODAY.isoformat(), "journal": "Example Research", "authors": ["A. Researcher"],
             "abstract": abstract, "abstract_source": "Crossref" if abstract else "", "sources": ["Crossref"],
             "preprint": False, "url": f"https://doi.org/10.1234/paper.{number}", "identifiers": [], "raw_files": [], **changes}
 
 
 def crossref_item(number):
-    return {"DOI": f"10.1234/paper.{number}", "title": [f"Soil microwave study {number}"],
-            "published": {"date-parts": [[TODAY.year, TODAY.month, TODAY.day]]}, "abstract": "Soil radiative transfer."}
+    return {"DOI": f"10.1234/paper.{number}", "title": [f"Delta zeta study {number}"],
+            "published": {"date-parts": [[TODAY.year, TODAY.month, TODAY.day]]}, "abstract": "Delta alpha beta."}
 
 
 class FakeClient:
@@ -82,17 +82,17 @@ class DigestTests(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):
             return digest.collect(self.root, self.profile, client=client, today=TODAY)
 
-    def test_remote_sensing_is_not_excluded(self):
-        self.assertIsNotNone(digest.assess(paper(title="Passive microwave remote sensing of soil moisture"), self.profile))
-        self.assertIsNotNone(digest.assess(paper(title="Optical canopy radiative transfer", abstract=""), self.profile))
+    def test_general_terms_is_not_excluded(self):
+        self.assertIsNotNone(digest.assess(paper(title="Synthetic zeta gamma of delta attribute"), self.profile))
+        self.assertIsNotNone(digest.assess(paper(title="Synthetic epsilon alpha beta", abstract=""), self.profile))
 
     def test_topic_requires_all_groups_but_accepts_synonyms(self):
-        self.assertIsNone(digest.assess(paper(title="Soil bacteria", abstract="Microbiology of soil"), self.profile))
-        self.assertIsNotNone(digest.assess(paper(title="Canopy radiative-transfer modelling", abstract=""), self.profile))
+        self.assertIsNone(digest.assess(paper(title="Delta bacteria", abstract="Microbiology of delta"), self.profile))
+        self.assertIsNotNone(digest.assess(paper(title="Epsilon alpha-beta modelling", abstract=""), self.profile))
 
     def test_word_boundaries_avoid_short_term_substrings(self):
-        self.assertFalse(digest.contains("progress in ecology", "PROS"))
-        self.assertTrue(digest.contains("L-band soil emission", "l band"))
+        self.assertFalse(digest.contains("progress in examples", "PROS"))
+        self.assertTrue(digest.contains("X-token delta output", "x token"))
 
     def test_two_crossref_pages_are_stored_before_selection(self):
         client = FakeClient({("crossref", 1): {"message": {"items": [crossref_item(1), crossref_item(2)], "next-cursor": "second", "total-results": 3}},
@@ -116,7 +116,7 @@ class DigestTests(unittest.TestCase):
             rows = {row["source"]: row for row in store.db.execute("SELECT * FROM checkpoints")}
             self.assertIsNone(rows["crossref"]["watermark"])
             self.assertEqual(rows["openalex"]["watermark"], TODAY.isoformat())
-            _, later_start = store.window("crossref", "soil microwave", self.profile["collection"], TODAY + dt.timedelta(days=25))
+            _, later_start = store.window("crossref", "delta zeta", self.profile["collection"], TODAY + dt.timedelta(days=25))
             self.assertEqual(later_start, (TODAY - dt.timedelta(days=14)).isoformat())
         finally:
             store.close()
@@ -166,7 +166,7 @@ class DigestTests(unittest.TestCase):
             store.close()
 
     def test_distinct_dois_with_identical_titles_are_not_merged(self):
-        first, second = self.put(paper(1, title="Soil microwave"), paper(2, title="Soil microwave"))
+        first, second = self.put(paper(1, title="Delta zeta"), paper(2, title="Delta zeta"))
         self.assertNotEqual(first, second)
 
     def test_title_only_record_can_gain_a_doi(self):
@@ -174,7 +174,7 @@ class DigestTests(unittest.TestCase):
         self.assertEqual(keys[0], keys[1])
 
     def test_arxiv_version_ids_are_normalized(self):
-        xml = f'<entry xmlns="http://www.w3.org/2005/Atom"><id>https://arxiv.org/abs/2611.12345v2</id><title>Canopy radiative transfer</title><summary>A model.</summary><published>{TODAY}T00:00:00Z</published></entry>'
+        xml = f'<entry xmlns="http://www.w3.org/2005/Atom"><id>https://arxiv.org/abs/2611.12345v2</id><title>Epsilon alpha beta</title><summary>A model.</summary><published>{TODAY}T00:00:00Z</published></entry>'
         result = digest.arxiv_paper(digest.ET.fromstring(xml))
         self.assertEqual(result["identifiers"], ["arxiv:2611.12345"])
         self.assertTrue(result["preprint"])
@@ -207,8 +207,8 @@ class DigestTests(unittest.TestCase):
         packet = digest.load_json(self.prepare())
         key = packet["papers"][0]["key"]
         with self.assertRaisesRegex(ValueError, "Title-only"):
-            digest.validate_analysis(packet, {"papers": [{"key": key, "title_zh": "土壤微波", "relevance": "标题候选。", "result": "Improves accuracy by 15%."}]})
-        self.assertTrue(digest.validate_analysis(packet, {"papers": [{"key": key, "title_zh": "土壤微波", "relevance": "仅由标题判断可能相关。"}]}))
+            digest.validate_analysis(packet, {"papers": [{"key": key, "title_zh": "测试标题", "relevance": "标题候选。", "result": "Improves accuracy by 15%."}]})
+        self.assertTrue(digest.validate_analysis(packet, {"papers": [{"key": key, "title_zh": "测试标题", "relevance": "仅由标题判断可能相关。"}]}))
 
     def test_unknown_or_missing_analysis_keys_are_rejected(self):
         self.put(paper())
@@ -245,7 +245,7 @@ class DigestTests(unittest.TestCase):
     def test_partial_publication_dates_are_not_invented(self):
         self.assertEqual(digest.publication([2026]), "2026")
         self.assertEqual(digest.publication([2026, 11]), "2026-11")
-        record = digest.crossref_paper({"DOI": "10.1/test", "title": ["Soil microwave"], "created": {"date-time": "2026-11-20T00:00:00Z"}})
+        record = digest.crossref_paper({"DOI": "10.1/test", "title": ["Delta zeta"], "created": {"date-time": "2026-11-20T00:00:00Z"}})
         self.assertEqual(record["published"], "")
         self.assertEqual(record["created_at"], "2026-11-20T00:00:00Z")
         record = paper(published=f"{TODAY.year}-{TODAY.month:02d}")
@@ -268,7 +268,7 @@ class DigestTests(unittest.TestCase):
         self.assertEqual(digest.status_report(self.root)["pending_deliveries"], [])
 
     def test_html_data_cannot_close_script_and_unsafe_urls_are_omitted(self):
-        self.put(paper(title="Soil microwave </script><script>alert(1)</script>", url="javascript:alert(1)"))
+        self.put(paper(title="Delta zeta </script><script>alert(1)</script>", url="javascript:alert(1)"))
         path = digest.archive(self.root, self.profile, self.prepare())
         self.assertNotIn("javascript:", path.read_text(encoding="utf-8"))
         page = (self.root / "library" / "index.html").read_text(encoding="utf-8")
@@ -277,7 +277,7 @@ class DigestTests(unittest.TestCase):
 
     def test_chinese_profile_and_results_round_trip(self):
         digest.write_json(self.root / "profile.json", self.profile)
-        self.assertEqual(digest.profile_for(self.root)["topics"][0]["label"], "裸土辐射传输")
+        self.assertEqual(digest.profile_for(self.root)["topics"][0]["label"], "测试主题甲")
 
     def test_human_or_agent_can_select_fewer_papers_without_losing_queue(self):
         keys = self.put(paper(1), paper(2), paper(3), paper(4))
@@ -296,7 +296,7 @@ class DigestTests(unittest.TestCase):
             digest.prepare(self.root, self.profile, selected_keys=["unknown"])
 
     def test_rate_limit_defers_remaining_queries_without_more_requests(self):
-        self.profile["topics"][0]["queries"].append("canopy model")
+        self.profile["topics"][0]["queries"].append("epsilon model")
         client = FakeClient({("crossref", 1): digest.RateLimitError("quota exceeded")})
         result = self.run_collect(client)
         self.assertEqual(len(client.calls), 1)
@@ -350,10 +350,10 @@ class DigestTests(unittest.TestCase):
         self.assertIn("retry_at", result["queries"][0])
 
     def test_journal_watch_is_prioritized_and_does_not_filter_by_issue_date(self):
-        self.profile["journal_watch"] = [{"name": "Example Journal", "issn": "0034-4257"}]
+        self.profile["journal_watch"] = [{"name": "Example Journal", "issn": "1234-567X"}]
         client = FakeClient({("crossref", 1): {"message": {"items": []}}})
         self.run_collect(client)
-        self.assertIn("/journals/0034-4257/works", client.calls[0][2])
+        self.assertIn("/journals/1234-567X/works", client.calls[0][2])
         self.assertIn("from-created-date", client.calls[0][2])
         self.assertNotIn("from-pub-date", client.calls[0][2])
 
@@ -384,11 +384,11 @@ class DigestTests(unittest.TestCase):
 
     def make_reading_fixture(self, key):
         source = self.root / "synthetic-fulltext.txt"
-        source.write_text("SYNTHETIC ARTICLE\nMethods: We solve a three-dimensional radiative transfer equation.\nResults: The model reproduces the synthetic reference curve.\n", encoding="utf-8")
+        source.write_text("SYNTHETIC ARTICLE\nMethods: We solve a three-dimensional alpha beta equation.\nResults: The model reproduces the synthetic reference curve.\n", encoding="utf-8")
         card_path = self.root / "reading-card-input.json"
         card = {"paper_key": key, "reading_scope": "fulltext", "source_sha256": "",
                 **{field: "Synthetic test note; not a scientific result." for field in reading.FIELDS},
-                "evidence": [{"field": "method", "locator": "Methods section", "support": "We solve a three-dimensional radiative transfer equation."},
+                "evidence": [{"field": "method", "locator": "Methods section", "support": "We solve a three-dimensional alpha beta equation."},
                              {"field": "result", "locator": "Results section", "support": "The model reproduces the synthetic reference curve."}]}
         digest.write_json(card_path, card)
         return source, card_path
@@ -479,7 +479,7 @@ class DigestTests(unittest.TestCase):
         store = digest.Store(self.root)
         try:
             reading.add(store, key)
-            reading.tag(store, self.profile, key, "soil", ["模型假设", "误差传播"])
+            reading.tag(store, self.profile, key, "delta", ["模型假设", "误差传播"])
             digest.render_library(store, self.profile)
         finally:
             store.close()
@@ -501,8 +501,8 @@ class DigestTests(unittest.TestCase):
 
     def test_topic_specific_title_exclusions_do_not_disable_other_topics(self):
         self.profile["topics"][0]["exclude_title_terms"] = ["image text retrieval"]
-        self.assertIsNone(digest.assess(paper(title="Soil remote sensing image-text retrieval"), self.profile))
-        self.assertIsNotNone(digest.assess(paper(title="Soil remote sensing physical parameter retrieval"), self.profile))
+        self.assertIsNone(digest.assess(paper(title="Delta gamma image-text retrieval"), self.profile))
+        self.assertIsNotNone(digest.assess(paper(title="Delta gamma physical parameter retrieval"), self.profile))
 
 
 if __name__ == "__main__":

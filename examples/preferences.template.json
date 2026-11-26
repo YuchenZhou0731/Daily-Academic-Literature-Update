@@ -1,0 +1,96 @@
+{
+  "language": "xxx",
+  "timezone": "xxx",
+  "schedule": {
+    "enabled": "xxx",
+    "frequency": "xxx",
+    "time": "xxx",
+    "weekdays": [
+      "xxx"
+    ]
+  },
+  "delivery": {
+    "channel": "xxx",
+    "recipient": "xxx",
+    "notify_empty": "xxx"
+  },
+  "sources": [
+    "xxx"
+  ],
+  "collection": {
+    "initial_days": "xxx",
+    "overlap_days": "xxx",
+    "publication_age_days": "xxx",
+    "page_size": "xxx",
+    "scopus_page_size": "xxx",
+    "max_pages": "xxx",
+    "max_runtime_seconds": "xxx",
+    "timeout_seconds": "xxx",
+    "retries": "xxx",
+    "max_retry_wait_seconds": "xxx",
+    "contact_email": "xxx",
+    "crossref_query_field": "xxx",
+    "crossref_date_mode": "xxx",
+    "crossref_lag_days": "xxx",
+    "crossref_overlap_days": "xxx",
+    "crossref_discovery_max_pages": "xxx",
+    "openalex_max_run_usd": "xxx"
+  },
+  "digest": {
+    "max_papers": "xxx",
+    "include_preprints": "xxx",
+    "include_title_only": "xxx",
+    "publication_types": [
+      "xxx"
+    ]
+  },
+  "journals": {
+    "mode": "xxx",
+    "names": [
+      "xxx"
+    ],
+    "exclude": [
+      "xxx"
+    ]
+  },
+  "journal_watch": [
+    {
+      "name": "xxx",
+      "issn": "xxx"
+    }
+  ],
+  "topics": [
+    {
+      "id": "xxx",
+      "label": "xxx",
+      "queries": [
+        "xxx"
+      ],
+      "require_all": [
+        [
+          "xxx"
+        ]
+      ],
+      "boost_terms": [
+        "xxx"
+      ],
+      "exclude_title_terms": [
+        "xxx"
+      ],
+      "subtopic_rules": [
+        {
+          "label": "xxx",
+          "terms": [
+            "xxx"
+          ]
+        }
+      ]
+    }
+  ],
+  "excluded_terms": [
+    "xxx"
+  ],
+  "selection_guidance": [
+    "xxx"
+  ]
+}

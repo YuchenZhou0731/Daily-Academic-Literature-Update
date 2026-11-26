@@ -1,0 +1,9 @@
+{
+  "id": "xxx",
+  "label": "xxx",
+  "queries": ["xxx"],
+  "require_all": [["xxx"]],
+  "boost_terms": ["xxx"],
+  "exclude_title_terms": ["xxx"],
+  "subtopic_rules": [{"label": "xxx", "terms": ["xxx"]}]
+}

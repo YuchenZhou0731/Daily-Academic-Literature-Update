@@ -17,8 +17,24 @@ import digest
 import workspace
 
 
-TOPIC = {"id": "battery-recycling", "label": "电池回收", "queries": ["lithium battery recycling"],
-         "require_all": [["battery", "batteries"], ["recycling", "recovery"]], "boost_terms": ["life cycle"]}
+TOPIC = {"id": "topic-a", "label": "测试主题甲", "queries": ["alpha beta"],
+         "require_all": [["alpha", "alphas"], ["beta", "betas"]], "boost_terms": ["quality marker"]}
+
+FILLED = {
+    "language": "zh-CN", "timezone": "UTC",
+    "schedule": {"enabled": False, "frequency": "manual", "time": "", "weekdays": []},
+    "delivery": {"channel": "local", "recipient": "", "notify_empty": False}, "sources": ["crossref"],
+    "collection": {"initial_days": 7, "overlap_days": 2, "publication_age_days": 90, "page_size": 2,
+                   "scopus_page_size": 2, "max_pages": 3, "max_runtime_seconds": 30, "timeout_seconds": 5,
+                   "retries": 0, "max_retry_wait_seconds": 1, "contact_email": "",
+                   "crossref_query_field": "query.title", "crossref_date_mode": "created-date",
+                   "crossref_lag_days": 1, "crossref_overlap_days": 2, "crossref_discovery_max_pages": 1,
+                   "openalex_max_run_usd": "0.01"},
+    "digest": {"max_papers": 2, "include_preprints": False, "include_title_only": True,
+               "publication_types": ["journal-article", "review"]},
+    "journals": {"mode": "any", "names": [], "exclude": []}, "journal_watch": [],
+    "topics": [TOPIC], "excluded_terms": [], "selection_guidance": []
+}
 
 
 class ConfigurationTests(unittest.TestCase):
@@ -33,35 +49,50 @@ class ConfigurationTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def ready(self, **changes):
-        workspace.configure(self.root, {"topics": [copy.deepcopy(TOPIC)], **changes}, confirm=True)
+        workspace.configure(self.root, workspace.merge(FILLED, changes), confirm=True)
         return digest.profile_for(self.root)
 
     def paper(self, number=1, **changes):
-        return digest.base_paper("Fixture", f"Battery recycling method {number}", "Battery recycling and material recovery.",
+        return digest.base_paper("Fixture", f"Alpha beta method {number}", "Alpha beta and synthetic reference.",
                                  publication_type="journal-article", published=dt.datetime.now(dt.timezone.utc).date().isoformat(),
-                                 journal="Example Research", doi=f"10.1234/battery.{number}", **changes)
+                                 journal="Example Research", doi=f"10.1234/alpha.{number}", **changes)
 
     def test_init_is_a_private_unconfirmed_draft_without_a_schedule(self):
         profile = digest.load_json(self.root / "profile.json")
         self.assertFalse(profile["preferences_confirmed"])
-        self.assertEqual(profile["topics"], [])
+        self.assertEqual(profile["topics"][0]["label"], "xxx")
         self.assertEqual(profile["previously_delivered_dois"], [])
-        self.assertFalse(profile["schedule"]["enabled"])
+        self.assertEqual(profile["schedule"]["enabled"], "xxx")
         self.assertEqual(profile["credentials"], {})
-        self.assertFalse(workspace.doctor(self.root)["configuration_ready"])
+        diagnosis = workspace.doctor(self.root)
+        self.assertFalse(diagnosis["configuration_ready"])
+        self.assertIn("digest.max_papers", diagnosis["unresolved_fields"])
+        self.assertFalse((self.root / "automation.json").exists())
         with self.assertRaises(ValueError):
             workspace.initialize(self.root)
 
-    def test_all_presets_are_optional_valid_drafts(self):
-        for name in ("remote-sensing", "machine-learning"):
-            root = self.root.parent / name
-            workspace.initialize(root, name)
-            profile = digest.load_json(root / "profile.json")
-            configuration.validate_profile(profile)
-            self.assertFalse(profile["preferences_confirmed"])
-            self.assertFalse(profile["schedule"]["enabled"])
-            with self.assertRaises(ValueError):
-                digest.execute(argparse.Namespace(command="collect"), root, profile)
+    def test_placeholders_cannot_be_confirmed_or_collected(self):
+        profile = digest.load_json(self.root / "profile.json")
+        configuration.validate_profile(profile, allow_draft=True)
+        before = (self.root / "profile.json").read_bytes()
+        with self.assertRaisesRegex(ValueError, "xxx"):
+            workspace.configure(self.root, {}, confirm=True)
+        self.assertEqual((self.root / "profile.json").read_bytes(), before)
+        with self.assertRaisesRegex(ValueError, "xxx"):
+            digest.profile_for(self.root)
+        with patch.object(digest, "HttpClient") as client, self.assertRaises(ValueError):
+            digest.execute(argparse.Namespace(command="collect"), self.root, profile)
+        client.assert_not_called()
+
+    def test_draft_can_be_filled_progressively_before_confirmation(self):
+        workspace.configure(self.root, {"timezone": "UTC"})
+        diagnosis = workspace.doctor(self.root)
+        self.assertFalse(diagnosis["configuration_ready"])
+        self.assertNotIn("timezone", diagnosis["unresolved_fields"])
+        self.ready()
+        diagnosis = workspace.doctor(self.root)
+        self.assertTrue(diagnosis["configuration_ready"])
+        self.assertEqual(diagnosis["unresolved_fields"], [])
 
     def test_custom_field_and_count_change_actual_selection(self):
         profile = self.ready(digest={"max_papers": 5}, selection_guidance=["Prefer reusable experimental methods."])
@@ -81,12 +112,12 @@ class ConfigurationTests(unittest.TestCase):
         with store.db:
             key = store.upsert(self.paper())
         store.close()
-        second = {"id": "catalysis", "label": "催化", "queries": ["catalysis recycling"], "require_all": [["catalysis"]]}
+        second = {"id": "topic-b", "label": "测试主题乙", "queries": ["topic-b beta"], "require_all": [["topic-b"]]}
         workspace.edit_topic(self.root, "add", second)
-        workspace.edit_topic(self.root, "update", {"label": "电池材料回收"}, TOPIC["id"])
-        workspace.edit_topic(self.root, "remove", identifier="catalysis")
+        workspace.edit_topic(self.root, "update", {"label": "测试主题更新"}, TOPIC["id"])
+        workspace.edit_topic(self.root, "remove", identifier="topic-b")
         profile = digest.profile_for(self.root)
-        self.assertEqual(profile["topics"][0]["label"], "电池材料回收")
+        self.assertEqual(profile["topics"][0]["label"], "测试主题更新")
         store = digest.Store(self.root)
         self.assertIsNotNone(store.get(key))
         store.close()
@@ -159,12 +190,12 @@ class ConfigurationTests(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):
             packet = digest.prepare(self.root, profile)
         analysis = self.root / "analysis.json"
-        digest.write_json(analysis, {"papers": [{"key": key, "title_local": "Battery recycling", "relevance": "Relevant to material recovery."}]})
+        digest.write_json(analysis, {"papers": [{"key": key, "title_local": "Alpha beta", "relevance": "Relevant to the configured keywords."}]})
         path = digest.archive(self.root, profile, packet, analysis)
         content = path.read_text(encoding="utf-8")
         self.assertIn("Literature digest", content)
         self.assertIn("full text not read", content)
-        self.assertIn("Relevant to material recovery.", content)
+        self.assertIn("Relevant to the configured keywords.", content)
         self.assertIn('lang="en"', path.with_suffix(".html").read_text(encoding="utf-8"))
 
     def test_profile_rejects_plaintext_key_fields(self):

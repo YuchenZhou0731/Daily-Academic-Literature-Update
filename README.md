@@ -8,19 +8,23 @@
 
 ## 可以自定义什么
 
-| 配置 | 示例 |
+| 配置 | 填写内容 |
 |---|---|
-| 研究主题 | 遥感、机器学习、电池回收，或任何自定义主题；可继续增加 |
-| 篇数 | 每次最多 3、5、10 篇；不足不凑数 |
-| 周期和时间 | 每日 08:00，或每周二、周五 09:15；自选时区 |
-| 期刊范围 | 不限期刊、优先推荐指定期刊、仅限指定期刊、排除指定期刊 |
-| 文献类型 | 研究论文、综述、数据库已识别的会议论文、单独标识的预印本 |
-| 近期范围 | 例如近 30 天；保留只有年份或月份的日期精度 |
-| 解读语言 | 中文或英文日报与分析 |
-| 研究偏好 | 优先模型验证、开源方法、特定问题；用自由文本补充 |
-| 接收方式 | 本地文献库、Codex 聊天，或另行授权的消息连接器 |
+| 研究主题 | xxx |
+| 篇数 | xxx |
+| 推送周期 | xxx |
+| 时间与时区 | xxx |
+| 期刊范围 | xxx |
+| 文献类型与预印本 | xxx |
+| 近期范围 | xxx |
+| 解读语言 | xxx |
+| 研究偏好 | xxx |
+| 检索来源 | xxx |
+| 接收方式 | xxx |
 
-遥感四主题与机器学习仅是两个可选示例。首次初始化也可以选择空白方案。期刊分区、影响因子和单位目录不会被自动猜测；有此要求时，请提供可核验的期刊清单。
+所有用户可填写的示例和配置模板值均使用 `xxx`，不预置研究方向、期刊清单或推送偏好。使用前请填写实际内容；数字、布尔值和数组应按对应类型填写，不需要的可选项可设为空字符串或空数组。仍有 `xxx` 时，程序会列出待填写字段并阻止确认或检索。字段名、支持的选项名称和程序版本要求不是占位符。
+
+期刊分区、影响因子和单位目录不会被自动猜测；有此要求时，请提供可核验的期刊清单。
 
 ## 没有使用过 Skill？从这里开始
 
@@ -46,7 +50,7 @@ python -m pip install -r requirements.txt
 
 例如：
 
-> 请使用 $literature-digest-skill 帮我配置文献推送。我关注电池回收和材料生命周期评价，每周二、周五北京时间 09:00，最多 5 篇。期刊不限，优先研究论文和综述，不收预印本。中文解读，保留本地文献库，并在本聊天推送。
+> 请使用 $literature-digest-skill 帮我配置文献推送。研究主题：xxx；每次最多篇数：xxx；推送周期：xxx；时间：xxx；时区：xxx；期刊范围：xxx；文献类型：xxx；预印本偏好：xxx；解读语言：xxx；接收方式：xxx；额外要求：xxx。
 
 助手会补问缺失信息、建立独立的私有工作区，并进行一次小规模检索。不要将邮箱、API Key、个人文献记录或运行目录上传到本仓库。
 
@@ -62,12 +66,12 @@ python -m pip install -r requirements.txt
 
 可以继续对助手说：
 
-- “增加太阳能电池退化这一主题，保留原来的主题。”
-- “改成每天早上七点半，最多两篇，时区为 Europe/Paris。”
-- “这两本期刊改成优先关注，其他期刊仍然可以入选。”
-- “只看我指定的期刊；允许预印本，但单独标识。”
-- “优先有独立验证数据的工作，不要为了达到篇数而放宽相关性。”
-- “把今天第二篇加入待精读，全文我稍后提供。”
+- “增加主题 xxx。”
+- “推送周期改为 xxx，时间改为 xxx，时区改为 xxx，最多 xxx 篇。”
+- “期刊范围改为 xxx。”
+- “文献类型改为 xxx，预印本偏好改为 xxx。”
+- “研究偏好增加 xxx。”
+- “把 xxx 加入待精读，全文来源为 xxx。”
 
 修改配置会保存旧版本；主题和时间变化不会清空历史文献或推送去重记录。
 
@@ -75,7 +79,7 @@ python -m pip install -r requirements.txt
 
 | 来源 | 使用方式 |
 |---|---|
-| Crossref | 初始启用的公开元数据来源，无需 Key；摘要可能缺失 |
+| Crossref | 可选择的公开元数据来源，无需 Key；摘要可能缺失 |
 | arXiv | 可选公开来源，无需 Key；作为预印本处理 |
 | OpenAlex | 用户自行提供 Key；按接口返回的每日额度和运行上限控制请求 |
 | Scopus | 用户自行提供 Elsevier Key，实际能力取决于账号接口权限 |
@@ -86,29 +90,29 @@ Windows 的 Key 使用当前用户 DPAPI 加密；macOS 和 Linux 桌面可使�
 
 ## 手动命令示例
 
-以下在仓库根目录运行。示例先配置偏好并手动验收，不注册定时任务：
+以下在仓库根目录运行。命令中的 `xxx` 代表用户填写的工作区、文件路径或参数；同一个工作区应始终使用同一路径。先将[配置模板](examples/preferences.template.json)复制到私有位置并填写，再配置、检查和手动验收；这些命令不注册定时任务：
 
 ```text
-python -I -B scripts/workspace.py --workspace ../literature-workspace init --preset remote-sensing
-python -I -B scripts/workspace.py --workspace ../literature-workspace configure --patch examples/preferences.weekly.json --confirm
-python -I -B scripts/workspace.py --workspace ../literature-workspace doctor
-python -I -B scripts/digest.py --workspace ../literature-workspace collect
-python -I -B scripts/digest.py --workspace ../literature-workspace prepare
+python -I -B scripts/workspace.py --workspace "xxx" init
+python -I -B scripts/workspace.py --workspace "xxx" configure --patch "xxx" --confirm
+python -I -B scripts/workspace.py --workspace "xxx" doctor
+python -I -B scripts/digest.py --workspace "xxx" collect
+python -I -B scripts/digest.py --workspace "xxx" prepare
 ```
 
 `prepare` 生成待复核材料。助手审阅标题、摘要和覆盖信息后，编写分析 JSON，再执行 `archive`。仅执行 Python 采集并不会自动产生可信的 AI 解读，也不会自动发送消息。
 
-添加主题：
+填写[主题模板](examples/topic.template.json)后，使用其实际文件路径添加主题：
 
 ```text
-python -I -B scripts/workspace.py --workspace ../literature-workspace topic add --file examples/topic.battery-recycling.json
+python -I -B scripts/workspace.py --workspace "xxx" topic add --file "xxx"
 ```
 
 需要 Key 的来源由用户在交互式终端中导入：
 
 ```text
-python -I -B scripts/workspace.py --workspace ../literature-workspace credential openalex
-python -I -B scripts/workspace.py --workspace ../literature-workspace doctor --credentials
+python -I -B scripts/workspace.py --workspace "xxx" credential xxx
+python -I -B scripts/workspace.py --workspace "xxx" doctor --credentials
 ```
 
 不要把 Key 放在命令参数、JSON 配置明文或环境变量中。本实现不读取环境变量值，也不采用匿名访问作为认证失败后的静默回退。

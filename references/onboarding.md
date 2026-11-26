@@ -13,23 +13,23 @@ If the user does not specify a setting, propose it visibly rather than presentin
 ## Initial setup
 
 1. Locate Python 3.10+ and install `requirements.txt` in the user's chosen Python environment when needed.
-2. Choose a private workspace separate from the installed Skill. For example, from the repository use `../literature-workspace`; never use the Skill directory itself. Initialization refuses to overwrite an existing profile and writes a workspace `.gitignore` that excludes its contents.
-3. Run `python -I -B scripts/workspace.py --workspace <workspace> init --preset <custom|remote-sensing|machine-learning>`.
-4. Read the draft `profile.json`; write a patch matching the conversation, and run `configure --patch <patch.json> --confirm` using the same script/workspace. The presets are unconfirmed examples. A custom setup needs at least one actual topic.
-5. Run `doctor`. Add optional API sources only when the user chooses them and has access. Baseline Crossref collection needs no key; adding arXiv is a separate source choice.
+2. Choose a private workspace separate from the installed Skill; its path is shown as `xxx` in command templates. Initialization refuses to overwrite an existing profile and writes a workspace `.gitignore` that excludes its contents.
+3. Run `python -I -B scripts/workspace.py --workspace "xxx" init` after replacing the path placeholder.
+4. Read the draft `profile.json`. All user-fillable values are `xxx`; fill them from the conversation, propose technical settings when needed, and clear unused optional values. Keep required JSON types: numeric and boolean values must not remain quoted placeholders. Run `configure --patch "xxx" --confirm` with the completed patch file only after every placeholder is resolved. At least one actual topic is required.
+5. Run `doctor` and inspect `unresolved_fields`. Add API sources only when selected and accessible. Crossref and arXiv are available without keys; neither is a supplied research preference.
 6. Collect with conservative page/runtime budgets, review a small candidate pool and archive a local digest. Record network, evidence and coverage limitations honestly.
 7. If the user requested recurring delivery, register/update a scheduler through the host and follow the separate unattended acceptance steps in `scheduling.md`.
 
 ## Incremental changes
 
-Use `configure --patch <patch.json>` for scalar/nested preferences. Objects merge; arrays replace. Existing SQLite history and archived reports are preserved, and the previous profile is copied into private `config-history/`.
+Use `configure --patch "xxx"` for scalar/nested preferences. Objects merge; arrays replace. Existing SQLite history and archived reports are preserved, and the previous profile is copied into private `config-history/`.
 
 For topics, avoid replacing the whole array when the user asks to add one:
 
 ```text
-python -I -B scripts/workspace.py --workspace <workspace> topic add --file <topic.json>
-python -I -B scripts/workspace.py --workspace <workspace> topic update --id <topic-id> --file <topic-patch.json>
-python -I -B scripts/workspace.py --workspace <workspace> topic remove --id <topic-id>
+python -I -B scripts/workspace.py --workspace "xxx" topic add --file "xxx"
+python -I -B scripts/workspace.py --workspace "xxx" topic update --id "xxx" --file "xxx"
+python -I -B scripts/workspace.py --workspace "xxx" topic remove --id "xxx"
 ```
 
 Keep a topic's ID stable when changing its display label or queries. Removal changes future matching; it does not erase papers or reading cards. After time/frequency/timezone changes, update the actual scheduled task as well as the profile. Never delete delivery history to implement a preference change.

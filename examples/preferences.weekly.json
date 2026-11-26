@@ -1,9 +1,0 @@
-{
-  "language": "zh-CN",
-  "timezone": "Asia/Shanghai",
-  "schedule": {"enabled": false, "frequency": "weekly", "time": "09:00", "weekdays": ["TU", "FR"]},
-  "digest": {"max_papers": 5, "include_preprints": true},
-  "sources": ["crossref", "arxiv"],
-  "delivery": {"channel": "local", "notify_empty": false},
-  "selection_guidance": ["优先提供与所选研究主题直接相关、具有明确方法或验证依据的论文；不足不凑数。"]
-}

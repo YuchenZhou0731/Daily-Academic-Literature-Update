@@ -1,9 +1,0 @@
-{
-  "topics": [
-    {"id": "reliable-machine-learning", "label": "可靠机器学习", "queries": ["machine learning uncertainty calibration", "machine learning out of distribution robustness"], "require_all": [["machine learning", "deep learning", "neural network", "neural networks"], ["uncertainty", "calibration", "robustness", "out of distribution"]], "boost_terms": ["benchmark", "reproducibility", "evaluation"]},
-    {"id": "scientific-machine-learning", "label": "科学机器学习", "queries": ["physics informed neural networks", "scientific machine learning inverse problems"], "require_all": [["machine learning", "neural network", "neural networks"], ["physics informed", "inverse problem", "inverse problems", "scientific computing"]], "boost_terms": ["validation", "uncertainty", "reproducible"]}
-  ],
-  "sources": ["crossref", "arxiv"],
-  "digest": {"include_preprints": true, "publication_types": ["journal-article", "review", "proceedings-article", "preprint"]},
-  "selection_guidance": ["Distinguish journal publications, conference papers and preprints; prioritize evidence over benchmark headlines."]
-}

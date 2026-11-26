@@ -19,7 +19,7 @@ from test_digest import PROFILE, TODAY, FakeClient, paper
 
 
 def scopus_item(number, date=None, display=None):
-    return {"dc:title": f"Soil microwave remote sensing study {number}", "prism:doi": f"10.1234/paper.{number}",
+    return {"dc:title": f"Delta zeta gamma study {number}", "prism:doi": f"10.1234/paper.{number}",
             "prism:coverDate": date or TODAY.isoformat(), "prism:coverDisplayDate": display or "",
             "prism:aggregationType": "Journal", "subtype": "ar", "dc:creator": "First Author", "eid": f"2-s2.0-{number}"}
 
@@ -91,7 +91,7 @@ class ApiTests(unittest.TestCase):
                 data = {"results": [], "echo": secret, "encoded": urllib.parse.quote(secret, safe="")}
             return io.BytesIO(json.dumps(data).encode())
         with patch.object(credentials, "decrypt", return_value=json.dumps({"api_key": secret})), patch.object(client.opener, "open", side_effect=respond), patch.object(digest.time, "sleep"):
-            result, _ = client.get("https://api.openalex.org/works?search=soil", "openalex", "fixture", 1)
+            result, _ = client.get("https://api.openalex.org/works?search=delta", "openalex", "fixture", 1)
             client.get("https://api.elsevier.com/content/search/scopus", "scopus", "fixture", 1)
         self.assertEqual(len(calls), 3)
         self.assertEqual(dict(calls[1].header_items())["Authorization"], "Bearer " + secret)
@@ -164,18 +164,18 @@ class ApiTests(unittest.TestCase):
 
     def test_scopus_uses_year_search_then_filters_outside_daily_window(self):
         client = FakeClient({("scopus", 1): scopus_response([scopus_item(1, "2027-01-01"), scopus_item(2, "2026-11-15")], 2)})
-        pages = list(digest.pages("scopus", "soil microwave", "2026-11-10", "2026-11-23", self.profile["collection"], client))
+        pages = list(digest.pages("scopus", "delta zeta", "2026-11-10", "2026-11-23", self.profile["collection"], client))
         self.assertEqual([p["doi"] for p in pages[0][0]], ["10.1234/paper.2"])
         query = urllib.parse.parse_qs(urllib.parse.urlsplit(client.calls[0][2]).query)
         self.assertEqual(query["date"], ["2026"])
         self.assertEqual(query["view"], ["STANDARD"])
-        list(digest.pages("scopus", "soil microwave", "2025-12-10", "2026-11-23", self.profile["collection"], client))
+        list(digest.pages("scopus", "delta zeta", "2025-12-10", "2026-11-23", self.profile["collection"], client))
         self.assertEqual(urllib.parse.parse_qs(urllib.parse.urlsplit(client.calls[-1][2]).query)["date"], ["2025-2026"])
 
     def test_scopus_offset_ceiling_does_not_claim_complete(self):
         client = FakeClient({})
         with self.assertRaisesRegex(ValueError, "offset limit"):
-            list(digest.pages("scopus", "soil", "2026-01-01", "2026-11-23", self.profile["collection"], client, {"next_page": 2501}))
+            list(digest.pages("scopus", "delta", "2026-01-01", "2026-11-23", self.profile["collection"], client, {"next_page": 2501}))
         self.assertEqual(client.calls, [])
 
     def test_scopus_page_size_does_not_reset_other_sources(self):
@@ -184,10 +184,10 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(digest.source_page_size("scopus", original), 10)
         self.assertEqual(digest.source_page_size("crossref", original), 100)
         for source in ("crossref", "openalex", "arxiv"):
-            self.assertEqual(digest.query_key(source, "soil", original), digest.query_key(source, "soil", changed))
-        self.assertNotEqual(digest.query_key("scopus", "soil", original), digest.query_key("scopus", "soil", changed))
+            self.assertEqual(digest.query_key(source, "delta", original), digest.query_key(source, "delta", changed))
+        self.assertNotEqual(digest.query_key("scopus", "delta", original), digest.query_key("scopus", "delta", changed))
         client = FakeClient({("scopus", 2): scopus_response([scopus_item(1)], 11)})
-        list(digest.pages("scopus", "soil", "2026-01-01", "2026-11-25", original, client, {"next_page": 2}))
+        list(digest.pages("scopus", "delta", "2026-01-01", "2026-11-25", original, client, {"next_page": 2}))
         params = urllib.parse.parse_qs(urllib.parse.urlsplit(client.calls[0][2]).query)
         self.assertEqual(params["start"], ["10"])
         self.assertEqual(params["count"], ["10"])
