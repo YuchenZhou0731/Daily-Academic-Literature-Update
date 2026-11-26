@@ -1,0 +1,8 @@
+{
+  "id": "battery-recycling",
+  "label": "电池回收",
+  "queries": ["lithium battery recycling", "battery material recovery"],
+  "require_all": [["battery", "batteries"], ["recycling", "recovery"]],
+  "boost_terms": ["life cycle", "reproducibility", "validation"],
+  "subtopic_rules": [{"label": "材料回收", "terms": ["material recovery", "lithium recovery"]}]
+}

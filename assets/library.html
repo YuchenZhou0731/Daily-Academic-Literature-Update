@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>个人文献库 · Literature Digest</title>
+<style>
+:root{color-scheme:light;--ink:#18333d;--muted:#647981;--paper:#f5f7f4;--line:#dce5df;--accent:#20755c}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.65 system-ui,"Microsoft YaHei",sans-serif}main{max-width:1120px;margin:0 auto;padding:50px 28px}header{border-bottom:1px solid var(--line);padding-bottom:24px;margin-bottom:28px}.eyebrow{font-size:12px;font-weight:650;letter-spacing:.17em;color:var(--accent)}h1{font-size:36px;line-height:1.25;font-weight:600;margin:10px 0}header p{color:var(--muted);margin:10px 0}.filters{display:grid;grid-template-columns:2fr 1.2fr 1fr;gap:12px;margin:25px 0 12px}input,select{width:100%;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px;color:var(--ink);font:inherit}.count{color:var(--muted);font-size:14px;margin:0 0 20px}.paper{padding:26px 28px;background:white;border:1px solid var(--line);border-radius:12px;margin:0 0 16px}.badges{display:flex;gap:8px;flex-wrap:wrap;font-size:12px}.badge{padding:3px 9px;background:#edf5f0;border-radius:4px;color:#31694f}.badge.preprint{background:#fff1d4;color:#8b671a}.paper h2{font-size:21px;line-height:1.45;margin:13px 0 5px}.paper a{color:inherit;text-decoration:none}.paper a:hover{color:var(--accent);text-decoration:underline}.english{color:var(--muted);font-size:15px;margin:0}.meta{font-size:13px;color:var(--muted);margin:12px 0}.reason{border-left:3px solid #9fc7ad;padding-left:14px;margin:17px 0}.evidence{font-size:13px;color:#806739}details{margin-top:14px}summary{cursor:pointer;color:var(--accent);font-size:14px}.abstract{white-space:pre-wrap;color:#3b535c;font-size:15px}.empty{padding:50px 20px;text-align:center;color:var(--muted)}footer{padding:25px 0;color:var(--muted);font-size:12px}button{border:1px solid var(--line);background:white;border-radius:5px;color:var(--accent);padding:5px 10px;cursor:pointer}@media(max-width:720px){main{padding:28px 16px}.filters{grid-template-columns:1fr}h1{font-size:28px}.paper{padding:20px}}
+</style>
+<main>
+  <header><div class="eyebrow">LITERATURE / RESEARCH NOTES</div><h1>个人文献库</h1><p id="topics-intro"></p><p id="schedule-note"></p></header>
+  <div class="filters"><input id="search" type="search" placeholder="搜索标题、摘要、作者、DOI 或精读笔记" aria-label="搜索文献"><select id="topic" aria-label="按研究主题筛选"><option value="">全部主主题</option></select><select id="subtopic" aria-label="按子主题筛选"><option value="">全部子主题</option></select></div>
+  <div class="filters" style="margin-top:0"><select id="status" aria-label="按收录状态筛选"><option value="">全部文献</option><option value="reviewed">已入选日报</option><option value="pending">待筛选候选</option><option value="preprint">预印本</option><option value="title">仅标题与元数据</option></select><select id="reading-status" aria-label="按阅读状态筛选"><option value="">全部阅读状态</option><option value="queued">待精读</option><option value="fulltext-ready">全文已就绪</option><option value="fulltext-read">已完成全文精读</option><option value="needs-review">文件变化待复核</option><option value="not-queued">未加入精读队列</option></select><span class="count" id="reading-count" style="align-self:center;margin:0"></span></div>
+  <p class="count" id="count"></p><p id="copy-status" class="count" role="status"></p><textarea id="copy-fallback" aria-label="可复制的文献操作请求" hidden style="width:100%;min-height:85px"></textarea><section id="papers" aria-live="polite"></section><footer id="footer"></footer>
+</main>
+<script type="application/json" id="library-data">__LIBRARY_DATA__</script>
+<script>
+const data=JSON.parse(document.getElementById('library-data').textContent);
+document.getElementById('topics-intro').textContent=data.topics.map(t=>t.label).join(' · ');
+document.getElementById('schedule-note').textContent=`${data.schedule?.enabled===false?'按需生成':data.schedule?.frequency==='daily'?'每日 '+data.schedule.time:'按配置周期生成'}，最多 ${data.max_papers} 篇（${data.timezone||'UTC'}）。保留来源与证据，候选不因日报篇数限制而丢弃。`;
+const search=document.getElementById('search'),topic=document.getElementById('topic'),subtopic=document.getElementById('subtopic'),status=document.getElementById('status'),readingStatus=document.getElementById('reading-status'),container=document.getElementById('papers');
+const readingLabels={'not-queued':'未加入精读队列',queued:'待精读','fulltext-ready':'全文已就绪','fulltext-read':'已完成全文精读','needs-review':'文件变化待复核'};
+function element(tag,content,cls){const node=document.createElement(tag);if(content)node.textContent=content;if(cls)node.className=cls;return node;}
+for(const item of data.topics){const option=element('option',item.label);option.value=item.id;topic.append(option);}
+const primary=p=>p.taxonomy?.primary_topic||p.topics[0]?.id||'unclassified';
+function updateSubtopics(){const previous=subtopic.value;subtopic.replaceChildren(element('option','全部子主题'));subtopic.firstChild.value='';const labels=new Set(data.papers.filter(p=>!topic.value||primary(p)===topic.value).flatMap(p=>p.taxonomy?.subtopics||[]));for(const label of [...labels].sort((a,b)=>a.localeCompare(b,'zh'))){const option=element('option',label);option.value=label;subtopic.append(option);}if(labels.has(previous))subtopic.value=previous;}
+async function copyRequest(value,message='请求已复制，请粘贴到 Codex 处理。'){try{await navigator.clipboard.writeText(value);document.getElementById('copy-status').textContent=message;document.getElementById('copy-fallback').hidden=true;}catch{const box=document.getElementById('copy-fallback');box.value=value;box.hidden=false;document.getElementById('copy-status').textContent='请手动复制下面的内容。';}}
+function render(){
+  const query=search.value.toLocaleLowerCase().trim();
+  const papers=data.papers.filter(p=>{
+    if(topic.value&&primary(p)!==topic.value)return false;
+    if(subtopic.value&&!(p.taxonomy?.subtopics||[]).includes(subtopic.value))return false;
+    if(readingStatus.value&&(p.reading?.status||'not-queued')!==readingStatus.value)return false;
+    if(status.value==='reviewed'&&!p.digest_date)return false;
+    if(status.value==='pending'&&p.digest_date)return false;
+    if(status.value==='preprint'&&!p.preprint)return false;
+    if(status.value==='title'&&p.abstract)return false;
+    return !query||[p.title,p.abstract,p.doi,...p.authors,(p.analysis.title_local||p.analysis.title_zh)||'',...(p.taxonomy?.subtopics||[]),...Object.values(p.reading?.card||{}).filter(v=>typeof v==='string')].join(' ').toLocaleLowerCase().includes(query);
+  });
+  container.replaceChildren();
+  document.getElementById('count').textContent=`显示 ${papers.length} 篇 / 累计 ${data.papers.length} 篇相关文献`;
+  for(const p of papers){
+    const card=element('article',null,'paper'),badges=element('div',null,'badges');
+    badges.append(element('span',data.topics.find(t=>t.id===primary(p))?.label||'待分类','badge'));
+    if(p.preprint)badges.append(element('span','预印本','badge preprint'));
+    badges.append(element('span',p.digest_date?`日报 ${p.digest_date}`:'待筛选','badge'));card.append(badges);
+    const reading=p.reading||{status:'not-queued'};
+    if(reading.status!=='not-queued')badges.append(element('span',readingLabels[reading.status]||reading.status,'badge'));
+    for(const label of p.taxonomy?.subtopics||[])badges.append(element('span',label,'badge'));
+    const heading=element('h2');
+    if(/^https?:\/\//i.test(p.url||'')){const link=element('a',(p.analysis.title_local||p.analysis.title_zh)||p.title);link.href=p.url;link.target='_blank';link.rel='noopener noreferrer';heading.append(link);}else heading.textContent=(p.analysis.title_local||p.analysis.title_zh)||p.title;
+    card.append(heading);if((p.analysis.title_local||p.analysis.title_zh))card.append(element('p',p.title,'english'));
+    card.append(element('p',[p.journal||'期刊未提供',p.published||'日期未提供',p.sources.join(' / '),p.authors.slice(0,5).join('; ')].join(' · '),'meta'));
+    if(p.digest_date&&Object.keys(p.analysis).length)card.append(element('p',`原日报解读 · ${p.digest_date}（保留当时证据）`,'meta'));
+    if(p.analysis.relevance)card.append(element('p',p.analysis.relevance,'reason'));
+    for(const [key,label] of [['goal','研究目标'],['method','方法'],['result','摘要报告的结果'],['limitation','摘要层面的边界']])if(p.analysis[key])card.append(element('p',`${label}：${p.analysis[key]}`));
+    const evidenceText=reading.status==='fulltext-read'?'元数据摘要与全文精读分别保存；全文证据见下方精读卡片。':reading.status==='needs-review'?'历史精读卡片对应旧文件；当前全文需要复核。':p.abstract?'证据：数据库摘要；尚未完成全文精读':'证据：仅标题与元数据；尚未读取摘要和全文';
+    card.append(element('p',evidenceText,'evidence'));
+    if(p.abstract){const details=element('details');details.append(element('summary',`查看来源摘要（${p.abstract_source||p.sources.join(' / ')}）`),element('p',p.abstract,'abstract'));card.append(details);}
+    if(reading.card){const details=element('details');details.append(element('summary',reading.status==='needs-review'?'查看历史版本精读卡片（当前文件待复核）':'查看全文精读卡片'));for(const [field,label] of [['summary','概述'],['objective','目标'],['method','方法'],['result','结果'],['model_assumptions','模型假设'],['data_validation','数据与验证'],['limitations','局限与适用条件'],['relevance','研究关联'],['next_action','下一步'],['reproducibility','复现信息']])if(reading.card[field])details.append(element('p',`${label}：${reading.card[field]}`));for(const evidence of reading.card.evidence||[])details.append(element('p',`证据定位 · ${evidence.field}：${evidence.locator}`,'meta'));card.append(details);}
+    const actions=element('p',null,'meta'),readingButton=element('button',reading.status==='not-queued'?'复制加入待精读请求':reading.status==='fulltext-read'?'复制查看精读卡片请求':'复制全文处理请求');
+    readingButton.dataset.readingKey=p.key;readingButton.addEventListener('click',()=>copyRequest(`请使用 $literature-digest-skill 在工作区 ${data.workspace} 中${reading.status==='not-queued'?'将文献记录 '+p.key+' 加入待精读队列；暂不获取全文':reading.status==='fulltext-read'?'打开文献记录 '+p.key+' 的全文精读卡片':'处理文献记录 '+p.key+' 的已关联或我提供的全文，阅读后制作带页码或章节定位的精读卡片'}。`));actions.append(readingButton);
+    if(reading.source_path){const copySource=element('button','复制全文文件路径');copySource.style.marginLeft='8px';copySource.addEventListener('click',()=>copyRequest(reading.source_path,'全文文件路径已复制。'));actions.append(copySource);}card.append(actions);
+    if(p.doi){const line=element('p',`DOI ${p.doi} `,'meta'),button=element('button','复制 DOI');button.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(p.doi);button.textContent='已复制';}catch{button.textContent='请选中 DOI 手动复制';}});line.append(button);card.append(line);}
+    container.append(card);
+  }
+  if(!papers.length)container.append(element('div','当前筛选条件下没有文献。','empty'));
+}
+search.addEventListener('input',render);topic.addEventListener('change',()=>{updateSubtopics();render();});subtopic.addEventListener('change',render);status.addEventListener('change',render);readingStatus.addEventListener('change',render);
+document.getElementById('reading-count').textContent=Object.entries({queued:'待精读','fulltext-ready':'全文就绪','fulltext-read':'已精读'}).map(([state,label])=>`${label} ${data.papers.filter(p=>p.reading?.status===state).length}`).join(' · ');
+document.getElementById('footer').textContent=`更新于 ${data.updated} · 本地静态文献库 · 期刊偏好仅参与排序，不以未经核验的分区或影响因子排除论文。`;
+updateSubtopics();render();
+</script>
+</html>

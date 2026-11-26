@@ -1,0 +1,11 @@
+{
+  "journals": {"mode": "prefer", "names": ["Remote Sensing of Environment", "IEEE Transactions on Geoscience and Remote Sensing"], "exclude": []},
+  "journal_watch": [{"name": "Remote Sensing of Environment", "issn": "0034-4257"}, {"name": "IEEE Transactions on Geoscience and Remote Sensing", "issn": "0196-2892"}],
+  "topics": [
+    {"id": "canopy-radiative-transfer", "label": "植被冠层辐射传输（含土壤层）", "queries": ["vegetation canopy radiative transfer", "canopy soil radiative transfer model"], "require_all": [["radiative transfer", "radiative transport", "radiation model"], ["vegetation", "canopy", "forest", "crop"]], "boost_terms": ["three dimensional", "multiple scattering", "soil", "polarization"], "subtopic_rules": [{"label": "冠层与土壤耦合", "terms": ["soil", "background"]}]},
+    {"id": "bare-soil-radiative-transfer", "label": "裸土辐射传输", "queries": ["bare soil radiative transfer", "soil microwave emissivity roughness"], "require_all": [["radiative transfer", "microwave emissivity", "brightness temperature", "reflectance model"], ["soil", "rough surface"]], "boost_terms": ["roughness", "dielectric", "validation"]},
+    {"id": "quantitative-remote-sensing", "label": "定量遥感", "queries": ["remote sensing physical parameter retrieval", "remote sensing radiative transfer inversion"], "require_all": [["remote sensing", "satellite", "radiometer", "hyperspectral", "LiDAR"], ["retrieval", "inversion", "parameter estimation", "data assimilation", "biophysical"]], "boost_terms": ["uncertainty", "validation", "physics informed"], "exclude_title_terms": ["image-text retrieval", "image retrieval", "text retrieval"]},
+    {"id": "ecological-remote-sensing", "label": "生态遥感", "queries": ["remote sensing ecosystem ecology", "vegetation fluorescence carbon remote sensing"], "require_all": [["remote sensing", "satellite", "LiDAR", "hyperspectral"], ["ecosystem", "ecology", "ecological", "biodiversity", "carbon", "photosynthesis", "vegetation"]], "boost_terms": ["carbon flux", "water stress", "fluorescence"]}
+  ],
+  "selection_guidance": ["冠层与土壤耦合通常归入冠层建模；仅出现 random forest 不足以归入森林生态。"]
+}

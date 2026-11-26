@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "preferences_confirmed": false,
+  "language": "zh-CN",
+  "timezone": "UTC",
+  "schedule": {"enabled": false, "frequency": "manual", "time": "08:00", "weekdays": []},
+  "delivery": {"channel": "local", "recipient": "", "notify_empty": false},
+  "sources": ["crossref"],
+  "credentials": {},
+  "collection": {
+    "initial_days": 14,
+    "overlap_days": 14,
+    "publication_age_days": 30,
+    "page_size": 100,
+    "scopus_page_size": 10,
+    "max_pages": 5,
+    "max_runtime_seconds": 600,
+    "timeout_seconds": 25,
+    "retries": 2,
+    "max_retry_wait_seconds": 30,
+    "contact_email": "",
+    "crossref_query_field": "query.title",
+    "crossref_date_mode": "created-date",
+    "crossref_lag_days": 1,
+    "crossref_overlap_days": 2,
+    "crossref_discovery_max_pages": 2,
+    "openalex_max_run_usd": "0.10"
+  },
+  "digest": {
+    "max_papers": 3,
+    "include_preprints": false,
+    "include_title_only": true,
+    "publication_types": ["journal-article", "review"]
+  },
+  "journals": {"mode": "any", "names": [], "exclude": []},
+  "journal_watch": [],
+  "topics": [],
+  "excluded_terms": [],
+  "previously_delivered_dois": [],
+  "selection_guidance": []
+}
